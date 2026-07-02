@@ -1,7 +1,8 @@
 from sqlalchemy.orm import DeclarativeBase,mapped_column,Mapped,relationship
 from sqlalchemy.ext.asyncio import async_sessionmaker , create_async_engine
 from datetime import datetime,UTC
-from sqlalchemy import ForeignKey
+from sqlalchemy import ForeignKey ,Text,String
+from pgvector.sqlalchemy import Vector
 from dotenv import load_dotenv
 import os
 load_dotenv()
@@ -18,20 +19,19 @@ class Document(Base):
     __tablename__ = "documents"
     id : Mapped[int] = mapped_column(primary_key=True)
     filename : Mapped[str] 
-    file_path: Mapped[str]
-    file_type: Mapped[str]
+    file_path: Mapped[str] = mapped_column(String(500))
+    file_type: Mapped[str] = mapped_column(String(100))
     file_size: Mapped[int]
-    created_at: Mapped[datetime] = mapped_column(default=datetime.now(UTC))
-    storage_url : Mapped[str]
+    created_at: Mapped[datetime] = mapped_column(default=lambda:datetime.now(UTC))
     chunks: Mapped[list["Chunk"]] = relationship(back_populates="document",cascade="all, delete-orphan")
 
 class Chunk(Base):
     __tablename__ = "chunks"
-    id : Mapped[int]
+    id : Mapped[int] = mapped_column(primary_key=True)
     document_id: Mapped[int] = mapped_column(ForeignKey("documents.id"))
     chunk_index: Mapped[int]
-    content: Mapped[str]
+    content: Mapped[str] = mapped_column(Text)
     embedding: Mapped[list[float]] = mapped_column(Vector(768))
-    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(default=lambda:datetime.now(UTC))
     document: Mapped["Document"] = relationship(back_populates="chunks")
     
