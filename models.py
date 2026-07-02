@@ -9,8 +9,8 @@ load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 engine = create_async_engine(DATABASE_URL)
-Session = async_sessionmaker(engine)
-session = Session()
+AsyncSessionLocal = async_sessionmaker(engine,expire_on_commit=False)
+session = AsyncSessionLocal()
 
 class Base(DeclarativeBase):
     pass 
@@ -34,4 +34,7 @@ class Chunk(Base):
     embedding: Mapped[list[float]] = mapped_column(Vector(768))
     created_at: Mapped[datetime] = mapped_column(default=lambda:datetime.now(UTC))
     document: Mapped["Document"] = relationship(back_populates="chunks")
-    
+
+async def get_db():
+    async with AsyncSession() as session:
+        yield session  
