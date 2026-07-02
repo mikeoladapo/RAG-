@@ -36,5 +36,5 @@ class Chunk(Base):
     document: Mapped["Document"] = relationship(back_populates="chunks")
 
 async def get_db():
-    async with AsyncSession() as session:
+    async with AsyncSessionLocal() as session:
         yield session  
