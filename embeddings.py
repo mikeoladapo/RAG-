@@ -8,3 +8,5 @@ def read_file(path:Path):
         text += page.extract_text() + "\n"
         return text 
     
+def chunk(text:str,count:int=20,overlap:int=2):
+    
