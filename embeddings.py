@@ -16,6 +16,8 @@ def read_file(path:Path):
     return text 
     
 def chunk(text:str,chunk_size:int=20,overlap:int=2):
+    if overlap >= chunk_size:
+        raise ValueError("overlap must be smaller than chunk_size")
     step = chunk_size - overlap
     chunks = []
     for start in range (0,len(text),step):
