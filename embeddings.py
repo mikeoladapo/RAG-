@@ -9,20 +9,20 @@ api_key = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key = api_key)
 
 def read_file(path:Path):
-    read = PdfReader(path)
+    reader = PdfReader(path)
     text = ""
-    for page in read.pages:
+    for page in reader.pages:
         text += page.extract_text() + "\n"
     return text 
     
-def chunk(text:str,count:int=20,overlap:int=2):
-    step = count - overlap
+def chunk(text:str,chunk_size:int=20,overlap:int=2):
+    step = chunk_size - overlap
     chunks = []
     for start in range (0,len(text),step):
-        chunks.append(text[start:start + count])
+        chunks.append(text[start:start + chunk_size])
     return chunks 
 
-def generate_embeddings(text:chunk) -> list[float]:
+def generate_embedding(text:str) -> list[float]:
     try:
         response = client.models.embed_content(
             model="gemini-embedding-2",
