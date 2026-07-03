@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker , create_async_engine
 from datetime import datetime,UTC
 from sqlalchemy import ForeignKey ,Text,String
 from pgvector.sqlalchemy import Vector
+from pydantic import BaseModel,ConfigDict
 from dotenv import load_dotenv
 import os
 load_dotenv()
@@ -37,3 +38,24 @@ class Chunk(Base):
 async def get_db():
     async with AsyncSessionLocal() as session:
         yield session  
+
+class ChunkResponse(BaseModel):
+    id: int
+    document_id: int
+    chunk_index: int
+    content: str
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class DocumentResponse(BaseModel):
+    id: int
+    filename: str
+    file_path: str
+    file_type: str
+    file_size: int
+    created_at: datetime
+    chunks: list[ChunkResponse] = []
+
+    model_config = ConfigDict(from_attributes=True)
