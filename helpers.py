@@ -3,10 +3,21 @@ from pathlib import Path
 from google import genai
 import os 
 from fastapi import HTTPException,types
-
+from pathlib import Path
+import shutil
+from fastapi import UploadFile,File 
 
 api_key = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key = api_key)
+
+UPLOAD_DIR = Path("uploads")
+UPLOAD_DIR.mkdir(exist_ok=True)
+
+def save_file(file:UploadFile) -> Path :
+    destination = UPLOAD_DIR / file.filename
+    with destination.open("wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    return destination
 
 def read_file(path:Path):
     reader = PdfReader(path)
