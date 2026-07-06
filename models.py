@@ -1,7 +1,7 @@
 from sqlalchemy.orm import DeclarativeBase,mapped_column,Mapped,relationship
 from sqlalchemy.ext.asyncio import async_sessionmaker , create_async_engine
 from datetime import datetime,UTC
-from sqlalchemy import ForeignKey ,Text,String
+from sqlalchemy import ForeignKey ,Text,String,DateTime
 from pgvector.sqlalchemy import Vector
 from pydantic import BaseModel,ConfigDict
 from dotenv import load_dotenv
@@ -22,7 +22,7 @@ class Document(Base):
     file_path: Mapped[str] = mapped_column(String(500))
     file_type: Mapped[str] = mapped_column(String(100))
     file_size: Mapped[int]
-    created_at: Mapped[datetime] = mapped_column(default=lambda:datetime.now(UTC))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),default=lambda:datetime.now(UTC))
     chunks: Mapped[list["Chunk"]] = relationship(back_populates="document",cascade="all, delete-orphan")
 
 class Chunk(Base):
@@ -32,7 +32,7 @@ class Chunk(Base):
     chunk_index: Mapped[int]
     content: Mapped[str] = mapped_column(Text)
     embedding: Mapped[list[float]] = mapped_column(Vector(768))
-    created_at: Mapped[datetime] = mapped_column(default=lambda:datetime.now(UTC))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),default=lambda:datetime.now(UTC))
     document: Mapped["Document"] = relationship(back_populates="chunks")
 
 async def get_db():
