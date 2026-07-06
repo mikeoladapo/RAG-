@@ -53,7 +53,6 @@ class DocumentResponse(BaseModel):
     filename: str
     file_path: str
     file_type: str
-    file_size: int
     created_at: datetime
     chunks: list[ChunkResponse] = []
 
