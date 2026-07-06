@@ -61,6 +61,6 @@ class DocumentResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 class Question(BaseModel):
-    question : str 
-    
+    text : str 
+
     model_config = ConfigDict(from_attributes=True)

@@ -51,6 +51,13 @@ def generate_embedding(text:str) -> list[float]:
         detail="Failed to generate embedding."
     )
 
+def send_prompt(prompt:str):
+    response = client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=prompt,
+    )
+    return response.text
+
 async def upload_document_service (file:UploadFile = File(...),db:AsyncSession = Depends(get_db)):
     path = save_file(file)
     document = Document(
