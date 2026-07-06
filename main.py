@@ -14,7 +14,9 @@ async def upload_document (file:UploadFile = File(...),db:AsyncSession = Depends
 async def ask_question(question:Question,db:AsyncSession = Depends(get_db)):
     embed_question = generate_embedding(question.text)
     cmd = (
-        select(Chunk).order_by(Chunk.embedding.cosine_distance(embed_question)).limit(5)
+        select(Chunk)
+        .where(Chunk.document_id == question.document_id)
+        .order_by(Chunk.embedding.cosine_distance(embed_question)).limit(5)
     )
     result = await db.execute(cmd)
     chunks = result.scalars().all()
