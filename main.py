@@ -1,4 +1,4 @@
-from fastapi import FastAPI,UploadFile,File,Depends
+from fastapi import FastAPI,UploadFile,File,Depends,HTTPException
 from models import get_db , ChunkResponse,DocumentResponse,Question,Chunk
 from sqlalchemy.ext.asyncio import AsyncSession
 from base.services import upload_document_service,generate_embedding,send_prompt
@@ -18,6 +18,11 @@ async def ask_question(question:Question,db:AsyncSession = Depends(get_db)):
     )
     result = await db.execute(cmd)
     chunks = result.scalars().all()
+    if not chunks:
+        raise HTTPException(
+            status_code=404,
+            detail="No indexed documents found."
+        )
     context = ""
     for chunk in chunks:
         context += chunk.content + "\n\n"
