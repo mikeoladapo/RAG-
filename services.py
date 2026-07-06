@@ -61,3 +61,5 @@ async def upload_document_service (file:UploadFile = File(...),db:AsyncSession =
     )
     db.add(document)
     await db.flush()
+    reader = read_file(path)
+    chunks = chunk(reader)
