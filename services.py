@@ -2,10 +2,12 @@ from pypdf import PdfReader
 from pathlib import Path
 from google import genai
 import os 
-from fastapi import HTTPException,types
+from fastapi import HTTPException,types , Depends
 from pathlib import Path
 import shutil
-from fastapi import UploadFile,File 
+from fastapi import UploadFile,File
+from sqlalchemy.ext.asyncio  import AsyncSession 
+from models import get_db , Chunk ,Document 
 
 api_key = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key = api_key)
@@ -48,3 +50,14 @@ def generate_embedding(text:str) -> list[float]:
         status_code=503,
         detail="Failed to generate embedding."
     )
+
+async def upload_document_service (file:UploadFile = File(...),db:AsyncSession = Depends(get_db)):
+    path = save_file(file)
+    document = Document(
+        filename=file.filename,
+        file_path=str(path),
+        file_type=file.content_type,
+        file_size=file.size or 0
+    )
+    db.add(document)
+    await db.flush()
