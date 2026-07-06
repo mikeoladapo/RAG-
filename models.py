@@ -59,3 +59,8 @@ class DocumentResponse(BaseModel):
     chunks: list[ChunkResponse] = []
 
     model_config = ConfigDict(from_attributes=True)
+
+class Question(BaseModel):
+    question : str 
+    
+    model_config = ConfigDict(from_attributes=True)
