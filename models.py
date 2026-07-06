@@ -21,6 +21,7 @@ class Document(Base):
     filename : Mapped[str] 
     file_path: Mapped[str] = mapped_column(String(500))
     file_type: Mapped[str] = mapped_column(String(100))
+    file_size: Mapped[int]
     created_at: Mapped[datetime] = mapped_column(default=lambda:datetime.now(UTC))
     chunks: Mapped[list["Chunk"]] = relationship(back_populates="document",cascade="all, delete-orphan")
 
@@ -53,6 +54,7 @@ class DocumentResponse(BaseModel):
     filename: str
     file_path: str
     file_type: str
+    file_size: int
     created_at: datetime
     chunks: list[ChunkResponse] = []
 
