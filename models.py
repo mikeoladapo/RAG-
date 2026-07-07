@@ -56,7 +56,6 @@ class DocumentResponse(BaseModel):
     file_type: str
     file_size: int
     created_at: datetime
-    chunks: list[ChunkResponse] = []
 
     model_config = ConfigDict(from_attributes=True)
 

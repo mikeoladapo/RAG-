@@ -1,8 +1,9 @@
 from pypdf import PdfReader
 from pathlib import Path
 from google import genai
+from google.genai import types
 import os 
-from fastapi import HTTPException,types , Depends
+from fastapi import HTTPException, Depends
 from pathlib import Path
 import shutil
 from fastapi import UploadFile,File
@@ -28,34 +29,56 @@ def read_file(path:Path):
         text += page.extract_text() + "\n"
     return text 
     
-def chunk(text:str,chunk_size:int=20,overlap:int=2):
-    if overlap >= chunk_size:
-        raise ValueError("overlap must be smaller than chunk_size")
-    step = chunk_size - overlap
+def chunk(text: str) -> list[str]:
+    paragraphs = text.split("\n\n")
     chunks = []
-    for start in range (0,len(text),step):
-        chunks.append(text[start:start + chunk_size])
-    return chunks 
+    current = ""
+    for paragraph in paragraphs:
+        if len(current) + len(paragraph) < 1000:
+            current += paragraph + "\n\n"
+        else:
+            chunks.append(current)
+            current = paragraph + "\n\n"
+    if current:
+        chunks.append(current)
+    return chunks
 
-def generate_embedding(text:str) -> list[float]:
+def generate_chunk_embedding(chunks:list[str]) -> list[list[float]]:
     try:
         response = client.models.embed_content(
             model="gemini-embedding-2",
-            contents=text,
+            contents=chunks,
             config=types.EmbedContentConfig(output_dimensionality=768)
         )
-        return response.embeddings[0].values
-    except Exception:
-        raise HTTPException(
-        status_code=503,
-        detail="Failed to generate embedding."
-    )
+        return [embedding.values for embedding in response.embeddings]
 
+
+    except Exception as e:
+        print(f"Embedding error: {e}")
+        raise HTTPException(
+            status_code=503,
+            detail=str(e)
+        )
+def generate_question_embedding(prompt:str):
+    try:
+        response = client.models.embed_content(
+                model="gemini-embedding-2",
+                contents=prompt,
+                config=types.EmbedContentConfig(output_dimensionality=768)
+            )
+        return response.embeddings[0].values
+    except Exception as e:
+        print(f"Embedding error: {e}")
+        raise HTTPException(
+            status_code=503,
+            detail=str(e)
+        )
 def send_prompt(prompt:str):
     response = client.models.generate_content(
         model="gemini-2.5-flash",
         contents=prompt,
     )
+    
     return response.text
 
 async def upload_document_service (file:UploadFile = File(...),db:AsyncSession = Depends(get_db)):
@@ -68,16 +91,19 @@ async def upload_document_service (file:UploadFile = File(...),db:AsyncSession =
     )
     db.add(document)
     await db.flush()
-    reader = read_file(path)
-    chunks = chunk(reader)
-    for index , content in enumerate(chunks):
-        embeddings = generate_embedding(content)
+    text = read_file(path)
+    chunks = chunk(text)
+    print(f"Text length: {len(text)}")
+    print(f"Chunks created: {len(chunks)}")
+    embeddings = generate_chunk_embedding(chunks)
+    for index, (content, embedding) in enumerate(zip(chunks, embeddings)):
         db_chunk = Chunk(
-            document_id = document.id,
-            chunk_index = index,
-            content = content ,
-            embedding = embeddings
+            document_id=document.id,
+            chunk_index=index,
+            content=content,
+            embedding=embedding,
         )
+
         db.add(db_chunk)
     await db.commit()
     await db.refresh(document)
