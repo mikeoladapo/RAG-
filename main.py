@@ -45,5 +45,6 @@ async def ask_question(question:Question,db:AsyncSession = Depends(get_db)):
     Question:
     {question.text}
     """
-    answer = send_prompt(prompt)
+    sender = send_prompt(prompt)
+    answer = sender.replace("\n\n", " ").replace("\n", " ")
     return {"answer": answer}
