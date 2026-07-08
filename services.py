@@ -34,14 +34,16 @@ def chunk(text: str) -> list[str]:
     chunks = []
     current = ""
     for paragraph in paragraphs:
-        if len(current) + len(paragraph) < 1000:
+        paragraph = paragraph.strip()
+        if not paragraph:
+            continue
+        if len(current) + len(paragraph) + 2 <= 1000:
             current += paragraph + "\n\n"
         else:
-            chunks.append(current)
+            chunks.append(current.strip())
             current = paragraph + "\n\n"
     if current:
-        chunks.append(current)
-    chunks = [c.strip() for c in chunks if c.strip()]
+        chunks.append(current.strip())
     return chunks 
 
 def generate_chunk_embedding(chunks:list[str]) -> list[list[float]]:
