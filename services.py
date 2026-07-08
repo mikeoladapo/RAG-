@@ -41,7 +41,8 @@ def chunk(text: str) -> list[str]:
             current = paragraph + "\n\n"
     if current:
         chunks.append(current)
-    return chunks
+    chunks = [c.strip() for c in chunks if c.strip()]
+    return chunks 
 
 def generate_chunk_embedding(chunks:list[str]) -> list[list[float]]:
     try:
@@ -92,9 +93,6 @@ async def upload_document_service (file:UploadFile = File(...),db:AsyncSession =
     await db.flush()
     text = read_file(path)
     chunks = chunk(text)
-    print(f"Text length: {len(text)}")
-    print(f"Chunks created: {len(chunks)}")
-    new_chunks = [c.strip() for c in chunks if c.strip()]
     embeddings = generate_chunk_embedding(new_chunks)
     for index, (content, embedding) in enumerate(zip(new_chunks, embeddings)):
         db_chunk = Chunk(

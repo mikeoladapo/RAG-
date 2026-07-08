@@ -1,14 +1,20 @@
 from fastapi import FastAPI,UploadFile,File,Depends,HTTPException
-from models import get_db , ChunkResponse,DocumentResponse,Question,Chunk
+from models import get_db , ChunkResponse,DocumentResponse,Question,Chunk,Document
 from sqlalchemy.ext.asyncio import AsyncSession
 from services import upload_document_service,generate_chunk_embedding,send_prompt,generate_question_embedding
 from sqlalchemy import select
 
 app = FastAPI()
-@app.post("/documents",response_model=DocumentResponse)
+@app.post("/upload_document",response_model=DocumentResponse)
 async def upload_document (file:UploadFile = File(...),db:AsyncSession = Depends(get_db)):
     document = await upload_document_service(file, db)
     return document 
+
+@app.get("/documents",response_model=list[DocumentResponse])
+async def get_documents(db:AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Document))
+    documents = result.scalars().all()
+    return documents
 
 @app.post("/ask_question")
 async def ask_question(question:Question,db:AsyncSession = Depends(get_db)):
