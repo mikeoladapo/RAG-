@@ -78,8 +78,7 @@ def send_prompt(prompt:str):
         model="gemini-2.5-flash",
         contents=prompt,
     )
-    
-    return response.text
+    return response.text.replace("\\n", "\n")
 
 async def upload_document_service (file:UploadFile = File(...),db:AsyncSession = Depends(get_db)):
     path = save_file(file)
