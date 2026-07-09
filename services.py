@@ -91,10 +91,12 @@ async def upload_document_service (file:UploadFile = File(...),db:AsyncSession =
         file_type=file.content_type,
         file_size=file.size or 0
     )
+    try:
     db.add(document)
     await db.flush()
     text = read_file(path)
-    chunks = chunk(text)
+    chunker = chunk(text)
+    chunks = [c.strip() for c in chunker if c.strip()]
     embeddings = generate_chunk_embedding(chunks)
     for index, (content, embedding) in enumerate(zip(chunks, embeddings)):
         db_chunk = Chunk(
