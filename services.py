@@ -157,3 +157,13 @@ async def bm25_search(query:str,db:AsyncSession,document_id:int,limit:int=10) ->
         reverse=True,
     )
     return [ chunk for score, chunk in ranked[:limit] if score > 0 ]
+
+async def hybrid_search(query:str,db:AsyncSession,document_id:int,limit:int=10) -> list[Chunk]:
+    vector_chunks = await vector_search(db=db,document_id=document_id,query=query,limit=limit)
+    bm25_chunks = await bm25_search(db=db,document_id=document_id,query=query,limit=limit)
+    merged_chunks = {}
+    for chunk in vector_chunks:
+        merged_chunks[chunk.id] = chunk
+    for chunk in bm25_chunks:
+        merged_chunks[chunk.id] = chunk
+    return list(merged_chunks.values())
