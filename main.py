@@ -36,18 +36,12 @@ async def ask_question(question:Question,db:AsyncSession = Depends(get_db)):
         context += chunk.content + "\n\n"
     prompt = f"""
     You are answering questions about one uploaded document.
-
     Use ONLY the information contained in the context below.
-
     If the answer is present, answer it clearly.
-
     If the answer is not present, reply exactly:
-
     "I couldn't find that information in the uploaded document."
-
     Context:
     {context}
-
     Question:
     {question.text}
     """
