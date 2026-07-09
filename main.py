@@ -40,11 +40,8 @@ async def ask_question(question:Question,db:AsyncSession = Depends(get_db)):
     If the answer is present, answer it clearly.
     If the answer is not present, reply exactly:
     "I couldn't find that information in the uploaded document."
-    Context:
-    {context}
-    Question:
-    {question.text}
-    """
+    Context:{context}
+    Question: {question.text} """
     sender = send_prompt(prompt)
     answer = sender.replace("\n\n", " ").replace("\n", " ")
     return {"answer": answer}
