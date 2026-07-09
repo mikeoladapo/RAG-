@@ -1,7 +1,7 @@
 from fastapi import FastAPI,UploadFile,File,Depends,HTTPException
 from models import get_db , ChunkResponse,DocumentResponse,Question,Chunk,Document
 from sqlalchemy.ext.asyncio import AsyncSession
-from services import upload_document_service,generate_chunk_embedding,send_prompt,generate_question_embedding
+from services import upload_document_service,generate_chunk_embedding,send_prompt,generate_question_embedding,vector_search,hybrid_search
 from sqlalchemy import select
 
 app = FastAPI()
@@ -18,22 +18,8 @@ async def get_documents(db:AsyncSession = Depends(get_db)):
 
 @app.post("/ask_question")
 async def ask_question(question:Question,db:AsyncSession = Depends(get_db)):
-    embed_question = generate_question_embedding(question.text)
-    stmt = (
-        select(Chunk)
-        .where(Chunk.document_id == question.document_id)
-        .order_by(Chunk.embedding.cosine_distance(embed_question)).limit(10)
-    )
-    result = await db.execute(stmt)
-    chunks = result.scalars().all()
-    if not chunks:
-        raise HTTPException(
-            status_code=404,
-            detail="No indexed documents found."
-        )
-    context = ""
-    for chunk in chunks:
-        context += chunk.content + "\n\n"
+    chunks = await hybrid_search(db=db,document_id=question.document_id,query=question.text)
+    context = "\n\n".join(chunk.content for chunk in chunks)
     prompt = f"""
     You are answering questions about one uploaded document.
     Use ONLY the information contained in the context below.
