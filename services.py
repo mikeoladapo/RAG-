@@ -92,21 +92,27 @@ async def upload_document_service (file:UploadFile = File(...),db:AsyncSession =
         file_size=file.size or 0
     )
     try:
-    db.add(document)
-    await db.flush()
-    text = read_file(path)
-    chunker = chunk(text)
-    chunks = [c.strip() for c in chunker if c.strip()]
-    embeddings = generate_chunk_embedding(chunks)
-    for index, (content, embedding) in enumerate(zip(chunks, embeddings)):
-        db_chunk = Chunk(
-            document_id=document.id,
-            chunk_index=index,
-            content=content,
-            embedding=embedding,
-        )
+        db.add(document)
+        await db.flush()
+        text = read_file(path)
+        chunker = chunk(text)
+        chunks = [c.strip() for c in chunker if c.strip()]
+        embeddings = generate_chunk_embedding(chunks)
+        for index, (content, embedding) in enumerate(zip(chunks, embeddings)):
+            db_chunk = Chunk(
+                document_id=document.id,
+                chunk_index=index,
+                content=content,
+                embedding=embedding,
+            )
 
-        db.add(db_chunk)
-    await db.commit()
-    await db.refresh(document)
-    return document
+            db.add(db_chunk)
+        await db.commit()
+        await db.refresh(document)
+        return document
+    except Exception:
+        await db.rollback()
+        if path.exists():
+            path.unlink() 
+        raise
+    
