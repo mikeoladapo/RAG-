@@ -8,7 +8,9 @@ from pathlib import Path
 import shutil
 from fastapi import UploadFile,File
 from sqlalchemy.ext.asyncio  import AsyncSession 
-from models import get_db , Chunk ,Document 
+from models import get_db , Chunk ,Document,DocumentResponse,Question
+from sqlalchemy import select
+from rank_bm25 import BM25Okapi
 
 api_key = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key = api_key)
@@ -116,3 +118,42 @@ async def upload_document_service (file:UploadFile = File(...),db:AsyncSession =
             path.unlink() 
         raise
     
+async def vector_search(query:str,db:AsyncSession,document_id:int,limit:int=10) -> list[Chunk]:
+    embed_question = generate_question_embedding(query)
+    stmt = (
+        select(Chunk)
+        .where(Chunk.document_id == document_id)
+        .order_by(Chunk.embedding.cosine_distance(embed_question)).limit(limit)
+    )
+    result = await db.execute(stmt)
+    chunks = result.scalars().all()
+    if not chunks:
+        raise HTTPException(
+            status_code=404,
+            detail="No indexed documents found."
+        )
+    return chunks 
+
+async def bm25_search(query:str,db:AsyncSession,document_id:int,limit:int=10) -> list[Chunk]:
+    stmt = (
+        select(Chunk)
+        .where(Chunk.document_id == document_id)
+    )
+    result = await db.execute(stmt)
+    chunks = result.scalars().all()
+    if not chunks:
+        raise HTTPException(
+            status_code=404,
+            detail="No indexed documents found."
+        )
+    documents = [chunk.content for chunk in chunks]
+    tokenized_docs = [document.lower().split() for document in documents]
+    bm25 = BM25Okapi(tokenized_docs)
+    tokenized_query = query.lower().split()
+    scores = bm25.get_scores(tokenized_query)
+    ranked = sorted(
+        zip(scores, chunks),
+        key=lambda x: x[0],
+        reverse=True,
+    )
+    return [ chunk for score, chunk in ranked[:limit] if score > 0 ]
