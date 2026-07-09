@@ -14,17 +14,17 @@ async def upload_document (file:UploadFile = File(...),db:AsyncSession = Depends
 async def get_documents(db:AsyncSession = Depends(get_db)):
     result = await db.execute(select(Document))
     documents = result.scalars().all()
-    return documents
+    return documents 
 
 @app.post("/ask_question")
 async def ask_question(question:Question,db:AsyncSession = Depends(get_db)):
     embed_question = generate_question_embedding(question.text)
-    cmd = (
+    stmt = (
         select(Chunk)
         .where(Chunk.document_id == question.document_id)
         .order_by(Chunk.embedding.cosine_distance(embed_question)).limit(10)
     )
-    result = await db.execute(cmd)
+    result = await db.execute(stmt)
     chunks = result.scalars().all()
     if not chunks:
         raise HTTPException(
