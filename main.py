@@ -1,8 +1,9 @@
 from fastapi import FastAPI,UploadFile,File,Depends,HTTPException
 from models import get_db , ChunkResponse,DocumentResponse,Question,Chunk,Document
 from sqlalchemy.ext.asyncio import AsyncSession
-from services import upload_document_service,generate_chunk_embedding,send_prompt,generate_question_embedding,vector_search,hybrid_search
+from services import upload_document_service,generate_chunk_embedding,send_prompt,generate_question_embedding,vector_search,hybrid_search,stream_prompt
 from sqlalchemy import select
+from fastapi.responses import StreamingResponse
 
 app = FastAPI()
 @app.post("/upload_document",response_model=DocumentResponse)
@@ -28,6 +29,4 @@ async def ask_question(question:Question,db:AsyncSession = Depends(get_db)):
     "I couldn't find that information in the uploaded document."
     Context:{context}
     Question: {question.text} """
-    sender = send_prompt(prompt)
-    answer = sender.replace("\n\n", " ").replace("\n", " ")
-    return {"answer": answer}
+    return StreamingResponse(stream_prompt(prompt),media_type="text/plain")
