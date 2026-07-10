@@ -78,7 +78,7 @@ def generate_question_embedding(prompt:str):
             status_code=503,
             detail=str(e)
         )
-def send_prompt(prompt:str):
+def stream_prompt(prompt:str):
     response = client.models.generate_content_stream(
         model="gemini-2.5-flash",
         contents=prompt,
