@@ -3,7 +3,8 @@ from models import get_db , DocumentResponse,Question,Document,Message
 from sqlalchemy.ext.asyncio import AsyncSession
 from services import upload_document_service,ask_question_service
 from sqlalchemy import select
-
+from schemas import DocumentResponse,ConversationResponse
+from crud import create_conversation_service,get_conversations_service,get_conversation_service
 
 app = FastAPI()
 @app.post("/upload_document",response_model=DocumentResponse)
@@ -23,3 +24,15 @@ async def ask_question(question:Question,db:AsyncSession = Depends(get_db)):
         question=question,
         db=db,
     )
+
+@app.post("/conversations",response_model=ConversationResponse,status_code=201,)
+async def create_conversation(db: AsyncSession = Depends(get_db)):
+    return await create_conversation_service(db)
+
+@app.get("/conversations",response_model=list[ConversationResponse],)
+async def get_conversations(db: AsyncSession = Depends(get_db),):
+    return await get_conversations_service(db)
+
+@app.get("/conversations/{conversation_id}",response_model=ConversationResponse,)
+async def get_conversation(conversation_id: int,db: AsyncSession = Depends(get_db)):
+    return await get_conversation_service(conversation_id,db,)
