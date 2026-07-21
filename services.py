@@ -175,12 +175,12 @@ async def load_previous_messages(conversation_id:int,db:AsyncSession):
     stmt = (
         select(Message)
         .where(Message.conversation_id == conversation_id)
-        .order_by(Message.created_at.asc())
+        .order_by(Message.created_at)
     )
     result = await db.execute(stmt)
     messages = result.scalars().all()
     for message in messages:
-        role = message.role
+        role = message.role.capitalize()
         content = message.content
         history += f"{role}: {content}\n"
     return history
