@@ -8,10 +8,10 @@ from pathlib import Path
 import shutil
 from fastapi import UploadFile,File
 from sqlalchemy.ext.asyncio  import AsyncSession 
-from models import get_db , Chunk ,Document,Message
+from models import get_db , Chunk ,Document,Message,Question
 from sqlalchemy import select
 from rank_bm25 import BM25Okapi
-
+from fastapi.responses import StreamingResponse
 api_key = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key = api_key)
 
@@ -202,3 +202,18 @@ async def load_previous_messages(conversation_id:int,db:AsyncSession):
         content = message.content
         history += f"{role}: {content}\n"
     return history
+
+async def ask_question_service(question:Question,db:AsyncSession = Depends(get_db)):
+    history = await load_previous_messages(conversation_id=question.conversation_id, db=db)
+    chunks = await hybrid_search(db=db,document_id=question.document_id,query=question.text)
+    context = "\n\n".join(chunk.content for chunk in chunks)
+    prompt = f"""
+    You are answering questions about one uploaded document.
+    Use ONLY the information contained in the context below.
+    If the answer is present, answer it clearly.
+    If the answer is not present, reply exactly:
+    "I couldn't find that information in the uploaded document."
+    History:{history}
+    Context:{context}
+    Question: {question.text} """
+    return StreamingResponse(await stream_prompt(prompt, db=db, conversation_id=question.conversation_id,question=question.text),media_type="text/plain")
