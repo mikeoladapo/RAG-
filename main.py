@@ -20,13 +20,6 @@ async def get_documents(db:AsyncSession = Depends(get_db)):
 @app.post("/ask_question")
 async def ask_question(question:Question,db:AsyncSession = Depends(get_db)):
     try:
-        user_message = Message(
-            conversation_id=question.conversation_id,
-            role="user",
-            content=question.text
-        )
-        await db.add(user_message)
-        await db.flush()
         history = await load_previous_messages(conversation_id=question.conversation_id, db=db)
         chunks = await hybrid_search(db=db,document_id=question.document_id,query=question.text)
         context = "\n\n".join(chunk.content for chunk in chunks)
@@ -39,7 +32,7 @@ async def ask_question(question:Question,db:AsyncSession = Depends(get_db)):
         History:{history}
         Context:{context}
         Question: {question.text} """
-        return StreamingResponse(await stream_prompt(prompt, db=db, conversation_id=question.conversation_id),media_type="text/plain")
+        return StreamingResponse(await stream_prompt(prompt, db=db, conversation_id=question.conversation_id,question=question.text),media_type="text/plain")
     except Exception:
         await db.rollback()
         raise
