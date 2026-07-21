@@ -78,15 +78,28 @@ def generate_question_embedding(prompt:str):
             status_code=503,
             detail=str(e)
         )
-def stream_prompt(prompt:str):
+async def stream_prompt(prompt:str,db:AsyncSession = Depends(get_db),conversation_id:int = None):
     response = client.models.generate_content_stream(
         model="gemini-2.5-flash",
         contents=prompt,
     )
-    for chunk in response:
-        if chunk.text:
-            yield chunk.text
-
+    full_answer = ""
+    try:
+        for chunk in response:
+            if chunk.text:
+                full_answer += chunk.text
+                yield chunk.text
+        if conversation_id is not None:
+            assistant_message = Message(
+                conversation_id=conversation_id,
+                role="assistant",
+                content=full_answer
+            )
+            db.add_all([user_message, assistant_message])
+            await db.commit()
+    except Exception:
+        await db.rollback()
+        raise
 async def upload_document_service (file:UploadFile = File(...),db:AsyncSession = Depends(get_db)):
     path = save_file(file)
     document = Document(

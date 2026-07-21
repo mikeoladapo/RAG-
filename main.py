@@ -1,7 +1,7 @@
 from fastapi import FastAPI,UploadFile,File,Depends
-from models import get_db , DocumentResponse,Question,Document
+from models import get_db , DocumentResponse,Question,Document,Message
 from sqlalchemy.ext.asyncio import AsyncSession
-from services import upload_document_service,hybrid_search,stream_prompt
+from services import upload_document_service,hybrid_search,stream_prompt,load_previous_messages
 from sqlalchemy import select
 from fastapi.responses import StreamingResponse
 
@@ -19,14 +19,27 @@ async def get_documents(db:AsyncSession = Depends(get_db)):
 
 @app.post("/ask_question")
 async def ask_question(question:Question,db:AsyncSession = Depends(get_db)):
-    chunks = await hybrid_search(db=db,document_id=question.document_id,query=question.text)
-    context = "\n\n".join(chunk.content for chunk in chunks)
-    prompt = f"""
-    You are answering questions about one uploaded document.
-    Use ONLY the information contained in the context below.
-    If the answer is present, answer it clearly.
-    If the answer is not present, reply exactly:
-    "I couldn't find that information in the uploaded document."
-    Context:{context}
-    Question: {question.text} """
-    return StreamingResponse(stream_prompt(prompt),media_type="text/plain")
+    try:
+        user_message = Message(
+            conversation_id=question.conversation_id,
+            role="user",
+            content=question.text
+        )
+        await db.add(user_message)
+        await db.flush()
+        history = await load_previous_messages(conversation_id=question.conversation_id, db=db)
+        chunks = await hybrid_search(db=db,document_id=question.document_id,query=question.text)
+        context = "\n\n".join(chunk.content for chunk in chunks)
+        prompt = f"""
+        You are answering questions about one uploaded document.
+        Use ONLY the information contained in the context below.
+        If the answer is present, answer it clearly.
+        If the answer is not present, reply exactly:
+        "I couldn't find that information in the uploaded document."
+        History:{history}
+        Context:{context}
+        Question: {question.text} """
+        return StreamingResponse(await stream_prompt(prompt, db=db, conversation_id=question.conversation_id),media_type="text/plain")
+    except Exception:
+        await db.rollback()
+        raise
