@@ -78,10 +78,10 @@ def generate_question_embedding(prompt:str):
             status_code=503,
             detail=str(e)
         )
-async def stream_prompt(prompt:str,db:AsyncSession = Depends(get_db),conversation_id:int = None):
+async def stream_prompt(question:str,db:AsyncSession = Depends(get_db),conversation_id:int = None):
     response = client.models.generate_content_stream(
         model="gemini-2.5-flash",
-        contents=prompt,
+        contents=question,
     )
     full_answer = ""
     try:
@@ -90,6 +90,11 @@ async def stream_prompt(prompt:str,db:AsyncSession = Depends(get_db),conversatio
                 full_answer += chunk.text
                 yield chunk.text
         if conversation_id is not None:
+            user_message = Message(
+            conversation_id=conversation_id,
+            role="user",
+            content=question
+        )
             assistant_message = Message(
                 conversation_id=conversation_id,
                 role="assistant",
