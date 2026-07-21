@@ -8,7 +8,7 @@ from pathlib import Path
 import shutil
 from fastapi import UploadFile,File
 from sqlalchemy.ext.asyncio  import AsyncSession 
-from models import get_db , Chunk ,Document,Message,Question
+from models import get_db , Chunk ,Document,Message,Question,Conversation
 from sqlalchemy import select
 from rank_bm25 import BM25Okapi
 from fastapi.responses import StreamingResponse
@@ -78,6 +78,17 @@ def generate_question_embedding(prompt:str):
             status_code=503,
             detail=str(e)
         )
+def generate_conversation_title(question: str) -> str:
+    prompt = f"""Generate a short conversation title (3-6 words) for this question.
+    Question:
+    {question}
+    Return ONLY the title."""
+    response = client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=prompt,
+    )
+    return response.text.strip()    
+
 async def stream_prompt(question:str,db:AsyncSession = Depends(get_db),conversation_id:int = None):
     response = client.models.generate_content_stream(
         model="gemini-2.5-flash",
@@ -204,6 +215,22 @@ async def load_previous_messages(conversation_id:int,db:AsyncSession):
     return history
 
 async def ask_question_service(question:Question,db:AsyncSession = Depends(get_db)):
+    conversation = await db.get(
+    Conversation,
+    question.conversation_id,
+)
+    if conversation is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Conversation not found.",
+        )
+
+    if not conversation.title:
+        conversation.title = generate_conversation_title(
+            question.text
+        )
+
+    await db.flush()
     history = await load_previous_messages(conversation_id=question.conversation_id, db=db)
     chunks = await hybrid_search(db=db,document_id=question.document_id,query=question.text)
     context = "\n\n".join(chunk.content for chunk in chunks)
@@ -217,3 +244,7 @@ async def ask_question_service(question:Question,db:AsyncSession = Depends(get_d
     Context:{context}
     Question: {question.text} """
     return StreamingResponse(await stream_prompt(prompt, db=db, conversation_id=question.conversation_id,question=question.text),media_type="text/plain")
+
+async def history_service(conversation_id:int,db:AsyncSession = Depends(get_db)):
+    history = await load_previous_messages(conversation_id=conversation_id, db=db)
+    return {"history": history}
