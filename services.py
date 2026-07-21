@@ -244,7 +244,3 @@ async def ask_question_service(question:Question,db:AsyncSession = Depends(get_d
     Context:{context}
     Question: {question.text} """
     return StreamingResponse(await stream_prompt(prompt, db=db, conversation_id=question.conversation_id,question=question.text),media_type="text/plain")
-
-async def history_service(conversation_id:int,db:AsyncSession = Depends(get_db)):
-    history = await load_previous_messages(conversation_id=conversation_id, db=db)
-    return {"history": history}
