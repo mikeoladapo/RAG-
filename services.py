@@ -8,7 +8,7 @@ from pathlib import Path
 import shutil
 from fastapi import UploadFile,File
 from sqlalchemy.ext.asyncio  import AsyncSession 
-from models import get_db , Chunk ,Document,DocumentResponse,Question
+from models import get_db , Chunk ,Document
 from sqlalchemy import select
 from rank_bm25 import BM25Okapi
 

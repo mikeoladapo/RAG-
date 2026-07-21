@@ -1,7 +1,7 @@
-from fastapi import FastAPI,UploadFile,File,Depends,HTTPException
-from models import get_db , ChunkResponse,DocumentResponse,Question,Chunk,Document
+from fastapi import FastAPI,UploadFile,File,Depends
+from models import get_db , DocumentResponse,Question,Document
 from sqlalchemy.ext.asyncio import AsyncSession
-from services import upload_document_service,generate_chunk_embedding,generate_question_embedding,vector_search,hybrid_search,stream_prompt
+from services import upload_document_service,hybrid_search,stream_prompt
 from sqlalchemy import select
 from fastapi.responses import StreamingResponse
 

@@ -40,6 +40,7 @@ class Conversation(Base):
     id : Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str] = mapped_column(String(200))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),default=lambda:datetime.now(UTC))
+    messages: Mapped[list["Message"]] = relationship(back_populates="conversation",cascade="all, delete-orphan")
 
 class Message(Base):
     __tablename__ = "messages"
@@ -48,6 +49,7 @@ class Message(Base):
     role: Mapped[str] = mapped_column(String(50))
     content: Mapped[str] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),default=lambda:datetime.now(UTC))
+    conversation: Mapped["Conversation"] = relationship(back_populates="messages")
     
 
 async def get_db():
