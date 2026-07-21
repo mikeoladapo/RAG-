@@ -8,7 +8,7 @@ from pathlib import Path
 import shutil
 from fastapi import UploadFile,File
 from sqlalchemy.ext.asyncio  import AsyncSession 
-from models import get_db , Chunk ,Document
+from models import get_db , Chunk ,Document,Message
 from sqlalchemy import select
 from rank_bm25 import BM25Okapi
 
@@ -168,4 +168,19 @@ async def hybrid_search(query:str,db:AsyncSession,document_id:int,limit:int=10) 
         merged_chunks[chunk.id] = chunk
     for chunk in bm25_chunks:
         merged_chunks[chunk.id] = chunk
-    #return list(merged_chunks.values())
+    return list(merged_chunks.values())
+
+async def load_previous_messages(conversation_id:int,db:AsyncSession):
+    history = ""
+    stmt = (
+        select(Message)
+        .where(Message.conversation_id == conversation_id)
+        .order_by(Message.created_at.asc())
+    )
+    result = await db.execute(stmt)
+    messages = result.scalars().all()
+    for message in messages:
+        role = message.role
+        content = message.content
+        history += f"{role}: {content}\n"
+    return history
