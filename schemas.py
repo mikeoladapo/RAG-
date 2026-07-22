@@ -36,14 +36,6 @@ class ConversationUpdate(BaseModel):
     title: str
 
 
-class ConversationResponse(BaseModel):
-    id: int
-    title: str
-    created_at: datetime
-    updated_at: datetime
-
-    model_config = ConfigDict(from_attributes=True)
-
 class MessageResponse(BaseModel):
     id: int
     role: str
@@ -51,3 +43,12 @@ class MessageResponse(BaseModel):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+class ConversationResponse(BaseModel):
+    id: int
+    title: str
+    created_at: datetime
+    updated_at: datetime | None = None
+    messages: list[MessageResponse] = []
+    model_config = ConfigDict(from_attributes=True)
+

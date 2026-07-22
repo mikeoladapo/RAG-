@@ -15,7 +15,7 @@ async def get_conversations_service(
 ):
     stmt = (
         select(Conversation)
-        .order_by(Conversation.updated_at.desc())
+        .order_by(Conversation.created_at.desc())
     )
     result = await db.execute(stmt)
     return result.scalars().all()

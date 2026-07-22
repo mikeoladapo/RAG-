@@ -87,10 +87,10 @@ def generate_conversation_title(question: str) -> str:
     )
     return response.text.strip()    
 
-async def stream_prompt(question:str,db:AsyncSession = Depends(get_db),conversation_id:int = None):
+async def stream_prompt(query:str,db:AsyncSession = Depends(get_db),conversation_id:int = None):
     response = client.models.generate_content_stream(
         model="gemini-2.5-flash",
-        contents=question,
+        contents=query,
     )
     full_answer = ""
     try:
@@ -102,7 +102,7 @@ async def stream_prompt(question:str,db:AsyncSession = Depends(get_db),conversat
             user_message = Message(
             conversation_id=conversation_id,
             role="user",
-            content=question
+            content=query
         )
             assistant_message = Message(
                 conversation_id=conversation_id,
@@ -239,4 +239,4 @@ async def ask_question_service(question:Question,db:AsyncSession = Depends(get_d
     History:{history}
     Context:{context}
     Question: {question.text} """
-    return StreamingResponse(await stream_prompt(prompt, db=db, conversation_id=question.conversation_id,question=question.text),media_type="text/plain")
+    return StreamingResponse(stream_prompt(prompt, db=db, conversation_id=question.conversation_id),media_type="text/plain")
