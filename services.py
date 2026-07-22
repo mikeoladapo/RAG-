@@ -56,8 +56,6 @@ def generate_chunk_embedding(chunks:list[str]) -> list[list[float]]:
             config=types.EmbedContentConfig(output_dimensionality=768)
         )
         return [embedding.values for embedding in response.embeddings]
-
-
     except Exception as e:
         print(f"Embedding error: {e}")
         raise HTTPException(
@@ -138,7 +136,6 @@ async def upload_document_service (file:UploadFile = File(...),db:AsyncSession =
                 content=content,
                 embedding=embedding,
             )
-
             db.add(db_chunk)
         await db.commit()
         await db.refresh(document)
@@ -229,7 +226,6 @@ async def ask_question_service(question:Question,db:AsyncSession = Depends(get_d
         conversation.title = generate_conversation_title(
             question.text
         )
-
     await db.flush()
     history = await load_previous_messages(conversation_id=question.conversation_id, db=db)
     chunks = await hybrid_search(db=db,document_id=question.document_id,query=question.text)
