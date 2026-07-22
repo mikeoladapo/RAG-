@@ -1,6 +1,6 @@
 from fastapi import Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from models import Message,Chunk,get_db
+from models import Conversation, Message,Chunk,get_db
 import os
 from google import genai
 from google.genai import types
@@ -79,6 +79,12 @@ async def stream_prompt(prompt:str,query:str,db:AsyncSession = Depends(get_db),c
                 content=full_answer
             )
             db.add_all([user_message, assistant_message])
+            conversation = await db.get(
+            Conversation,
+            conversation_id,
+            )
+            if conversation.title == "New Conversation":
+                conversation.title = await generate_conversation_title(query)
             await db.commit()
     except Exception:
         await db.rollback()
@@ -134,7 +140,7 @@ async def hybrid_search(query:str,db:AsyncSession,document_id:int,limit:int=10) 
         merged_chunks[chunk.id] = chunk
     return list(merged_chunks.values())
 
-def generate_conversation_title(question: str) -> str:
+async def generate_conversation_title(question: str) -> str:
     prompt = f"""Generate a short conversation title (3-6 words) for this question.
     Question:
     {question}
