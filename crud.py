@@ -1,8 +1,28 @@
-from fastapi import HTTPException
+from fastapi import HTTPException, Path, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from models import Conversation
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
+from pathlib import Path
+import shutil
+from pypdf import PdfReader
+
+
+UPLOAD_DIR = Path("uploads")
+UPLOAD_DIR.mkdir(exist_ok=True)
+
+def save_file(file:UploadFile) -> Path :
+    destination = UPLOAD_DIR / file.filename
+    with destination.open("wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    return destination
+
+def read_file(path:Path):
+    reader = PdfReader(path)
+    text = ""
+    for page in reader.pages:
+        text += page.extract_text() + "\n"
+    return text 
 
 async def create_conversation_service(db: AsyncSession):
     conversation = Conversation(title="New Conversation")

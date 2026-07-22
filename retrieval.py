@@ -1,14 +1,11 @@
 from fastapi import Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from models import Message
+from models import Message,Chunk,get_db
 import os
 from google import genai
 from google.genai import types
-from retrieval import chunk,generate_chunk_embedding,generate_question_embedding
 from rank_bm25 import BM25Okapi
-from fastapi.responses import StreamingResponse
 from sqlalchemy import select
-from models import get_db, Chunk, Document, Conversation
 
 api_key = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key = api_key)
