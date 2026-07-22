@@ -86,4 +86,4 @@ async def ask_question_service(question:Question,db:AsyncSession = Depends(get_d
     History:{history}
     Context:{context}
     Question: {question.text} """
-    return StreamingResponse(stream_prompt(prompt, db=db, conversation_id=question.conversation_id),media_type="text/plain")
+    return StreamingResponse(stream_prompt(prompt=prompt,query=question.text, db=db, conversation_id=question.conversation_id),media_type="text/plain")
