@@ -8,6 +8,7 @@ from retrieval import chunk,generate_chunk_embedding
 from crud import save_file,read_file
 from schemas import Question
 from retrieval import generate_conversation_title,hybrid_search,stream_prompt
+from langsmith import traceable
 
 async def upload_document_service (file:UploadFile = File(...),db:AsyncSession = Depends(get_db)):
     path = save_file(file)
@@ -58,6 +59,8 @@ async def load_previous_messages(conversation_id:int,db:AsyncSession):
         history += f"{role}: {content}\n"
     return history
 
+
+@traceable
 async def ask_question_service(question:Question,db:AsyncSession = Depends(get_db)):
     conversation = await db.get(
     Conversation,
@@ -67,11 +70,6 @@ async def ask_question_service(question:Question,db:AsyncSession = Depends(get_d
         raise HTTPException(
             status_code=404,
             detail="Conversation not found.",
-        )
-
-    if not conversation.title:
-        conversation.title = generate_conversation_title(
-            question.text
         )
     await db.flush()
     history = await load_previous_messages(conversation_id=question.conversation_id, db=db)

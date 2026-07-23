@@ -12,7 +12,7 @@ api_key = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key = api_key)
 
 LANGSMITH_API_KEY=os.getenv("LANGSMITH_API_KEY")
-LANGSMITH_TRACING="true"
+LANGSMITH_TRACING=True
 
 def chunk(text: str) -> list[str]:
     paragraphs = text.split("\n\n")
@@ -59,7 +59,8 @@ def generate_question_embedding(prompt:str):
             status_code=503,
             detail=str(e)
         )
-    
+
+@traceable    
 async def stream_prompt(prompt:str,query:str,db:AsyncSession = Depends(get_db),conversation_id:int = None):
     response = client.models.generate_content_stream(
         model="gemini-2.5-flash",
@@ -94,6 +95,7 @@ async def stream_prompt(prompt:str,query:str,db:AsyncSession = Depends(get_db),c
         await db.rollback()
         raise
 
+@traceable
 async def vector_search(query:str,db:AsyncSession,document_id:int,limit:int=10) -> list[Chunk]:
     embed_question = generate_question_embedding(query)
     stmt = (
@@ -110,6 +112,7 @@ async def vector_search(query:str,db:AsyncSession,document_id:int,limit:int=10) 
         )
     return chunks 
 
+@traceable
 async def bm25_search(query:str,db:AsyncSession,document_id:int,limit:int=10) -> list[Chunk]:
     stmt = (
         select(Chunk)
@@ -134,6 +137,7 @@ async def bm25_search(query:str,db:AsyncSession,document_id:int,limit:int=10) ->
     )
     return [ chunk for score, chunk in ranked[:limit] if score > 0 ]
 
+@traceable
 async def hybrid_search(query:str,db:AsyncSession,document_id:int,limit:int=10) -> list[Chunk]:
     vector_chunks = await vector_search(db=db,document_id=document_id,query=query,limit=limit)
     bm25_chunks = await bm25_search(db=db,document_id=document_id,query=query,limit=limit)
