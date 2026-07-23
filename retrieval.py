@@ -6,9 +6,13 @@ from google import genai
 from google.genai import types
 from rank_bm25 import BM25Okapi
 from sqlalchemy import select
+from langsmith import traceable 
 
 api_key = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key = api_key)
+
+LANGSMITH_API_KEY=os.getenv("LANGSMITH_API_KEY")
+LANGSMITH_TRACING="true"
 
 def chunk(text: str) -> list[str]:
     paragraphs = text.split("\n\n")
