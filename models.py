@@ -3,14 +3,13 @@ from sqlalchemy.ext.asyncio import async_sessionmaker , create_async_engine
 from datetime import datetime,UTC
 from sqlalchemy import ForeignKey ,Text,String,DateTime
 from pgvector.sqlalchemy import Vector
-from pydantic import BaseModel,ConfigDict
 from dotenv import load_dotenv
 import os
 load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 engine = create_async_engine(DATABASE_URL)
-AsyncSessionLocal = async_sessionmaker(engine,expire_on_commit=False)
+AsyncSessionLocal = async_sessionmaker(bind=engine,expire_on_commit=False)
 
 class Base(DeclarativeBase):
     pass 
@@ -55,30 +54,3 @@ class Message(Base):
 async def get_db():
     async with AsyncSessionLocal() as session:
         yield session  
-
-class ChunkResponse(BaseModel):
-    id: int
-    document_id: int
-    chunk_index: int
-    content: str
-    created_at: datetime
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class DocumentResponse(BaseModel):
-    id: int
-    filename: str
-    file_path: str
-    file_type: str
-    file_size: int
-    created_at: datetime
-
-    model_config = ConfigDict(from_attributes=True)
-
-class Question(BaseModel):
-    conversation_id: int
-    document_id : int 
-    text : str 
-
-    model_config = ConfigDict(from_attributes=True)

@@ -1,12 +1,11 @@
 from fastapi import HTTPException, Path, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
-from models import Conversation
+from .models import Conversation
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from pathlib import Path
 import shutil
 from pypdf import PdfReader
-
 
 UPLOAD_DIR = Path("uploads")
 UPLOAD_DIR.mkdir(exist_ok=True)

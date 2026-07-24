@@ -1,6 +1,6 @@
 from fastapi import Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from models import Conversation, Message,Chunk,get_db
+from .models import Conversation, Message,Chunk,get_db
 import os
 from google import genai
 from google.genai import types

@@ -1,5 +1,5 @@
 from fastapi import FastAPI,UploadFile,File,Depends
-from models import get_db , DocumentResponse,Question,Document,Message
+from .models import get_db , DocumentResponse,Question,Document,Message
 from sqlalchemy.ext.asyncio import AsyncSession
 from services import upload_document_service,ask_question_service
 from sqlalchemy import select

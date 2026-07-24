@@ -1,7 +1,7 @@
 from fastapi import HTTPException, Depends
 from fastapi import UploadFile,File
 from sqlalchemy.ext.asyncio  import AsyncSession 
-from models import get_db , Chunk ,Document,Message,Conversation
+from .models import get_db , Chunk ,Document,Message,Conversation
 from sqlalchemy import select
 from fastapi.responses import StreamingResponse
 from retrieval import chunk,generate_chunk_embedding
